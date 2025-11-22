@@ -20,6 +20,8 @@ import java.nio.file.Files; // For File Operations
 import java.security.MessageDigest; // For Caching Hash
 import java.security.NoSuchAlgorithmException; // For Caching Hash
 import javax.swing.*;
+import javax.swing.event.HyperlinkEvent; // Added for Popup Link
+import java.awt.Desktop; // Added for Popup Link
 import java.awt.Frame;
 import java.io.ObjectOutputStream;
 import java.net.DatagramPacket;
@@ -1214,6 +1216,42 @@ public class GameController {
         }
     }
 
+    private boolean showGifConfirmationDialog(String username, String url, long fileSizeBytes, double durationSeconds) {
+        String sourceSize = "Unknown";
+        if (fileSizeBytes > 0) {
+            double mb = fileSizeBytes / (1024.0 * 1024.0);
+            sourceSize = String.format("%.2f MB", mb);
+        }
+
+        // ESTIMATION: 320p @ 10fps usually averages 0.3-0.5 MB/s depending on complexity/dithering.
+        // We use 0.35 MB/s as a reasonable heuristic to warn the host.
+        double estMb = durationSeconds * 0.35;
+        String estSize = String.format("~%.2f MB", estMb);
+
+        JEditorPane linkPane = new JEditorPane("text/html",
+                "<html><body style='font-family: Sans-Serif;'>" +
+                        "Request from: <b>" + username + "</b><br>" +
+                        "File: " + (url.length() > 50 ? url.substring(0, 47) + "..." : url) + "<br>" +
+                        "Video Size: <b>" + sourceSize + "</b><br>" +
+                        "Est. GIF Size: <b>" + estSize + "</b><br><br>" +
+                        "<b><a href='" + url + "' style='color: #55ff55;'>Open in Browser</a></b><br><br>" +
+                        "Do you want to download and convert this file?</body></html>");
+        linkPane.setEditable(false);
+        linkPane.setOpaque(false);
+        linkPane.putClientProperty(JEditorPane.HONOR_DISPLAY_PROPERTIES, Boolean.TRUE);
+        linkPane.addHyperlinkListener(e -> {
+            if (HyperlinkEvent.EventType.ACTIVATED.equals(e.getEventType())) {
+                try {
+                    Desktop.getDesktop().browse(e.getURL().toURI());
+                } catch (Exception ex) { ex.printStackTrace(); }
+            }
+        });
+
+        java.awt.Component parent = (baseUI instanceof SwingUI) ? ((SwingUI) baseUI).getGameWindow() : null;
+        int ret = JOptionPane.showConfirmDialog(parent, linkPane, "Security Warning: External Media", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE);
+        return ret == JOptionPane.YES_OPTION;
+    }
+
     private void handleChatCommand(Player player, String message) {
         String[] parts = message.split(" ");
         String command = parts[0].toLowerCase();
@@ -1276,6 +1314,7 @@ public class GameController {
 
                 String start = "0";
                 String duration = "10";
+                double durationVal = 10.0;
 
                 // Max duration based on who's requesting
                 double maxDurationSeconds = player.equals(this.self) ? 60.0 : 30.0;
@@ -1295,6 +1334,7 @@ public class GameController {
                             d = maxDurationSeconds;
                             sendPrivateMessage(player, String.format("Duration clamped to max allowed: %.0fs.", maxDurationSeconds));
                         }
+                        durationVal = d;
                         duration = String.valueOf(d);
                     }
                 }
@@ -1307,6 +1347,48 @@ public class GameController {
 
                 if (util.ImageConverter.isWebM(url) || lowerPath.endsWith(".mkv") || lowerPath.endsWith(".mov") ||
                         lowerPath.endsWith(".avi") || lowerPath.endsWith(".mp4") || lowerPath.endsWith(".m4v")) {
+
+                    // Check if file exists in cache to bypass confirmation
+                    String cacheKey = generateHash(url + "_" + start + "_" + duration);
+                    java.io.File cacheDir = new java.io.File(getCacheDirectory());
+                    java.io.File cachedFile = new java.io.File(cacheDir, cacheKey + ".gif");
+                    boolean isCached = cachedFile.exists();
+
+                    // --- NEW: HOST CONFIRMATION (Only if NOT cached) ---
+                    if (isNetworkGame && !player.equals(this.self) && !isCached) {
+                        final String fUrl = url;
+                        final String fStart = start;
+                        final String fDuration = duration;
+                        final double fDurationVal = durationVal;
+                        final long fLimit = calcLimit;
+
+                        // Fetch size asynchronously before showing dialog
+                        new Thread(() -> {
+                            long size = -1;
+                            try {
+                                java.net.HttpURLConnection conn = (java.net.HttpURLConnection) new java.net.URL(fUrl).openConnection();
+                                conn.setRequestMethod("HEAD");
+                                conn.setConnectTimeout(3000);
+                                conn.setReadTimeout(3000);
+                                if (conn.getResponseCode() == 200) {
+                                    size = conn.getContentLengthLong();
+                                }
+                                conn.disconnect();
+                            } catch (Exception e) { /* ignore */ }
+
+                            final long fSize = size;
+                            SwingUtilities.invokeLater(() -> {
+                                if (showGifConfirmationDialog(player.getName(), fUrl, fSize, fDurationVal)) {
+                                    processVideoToGif(fUrl, fStart, fDuration, fLimit);
+                                } else {
+                                    sendPrivateMessage(player, "<p class=\"system\">Host denied your GIF request.</p>");
+                                }
+                            });
+                        }).start();
+                        return;
+                    }
+                    // ------------------------------
+
                     processVideoToGif(url, start, duration, calcLimit);
                     return;
                 }
