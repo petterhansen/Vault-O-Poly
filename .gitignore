@@ -56,3 +56,6 @@ setup.iss
 .idea/encodings.xml
 .idea/compiler.xml
 .idea/.name
+/cache/gifs
+vault-o-poly.iml
+vopconfig.xml
