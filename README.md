@@ -226,7 +226,7 @@ src/main/resources/
 ## 🙏 Acknowledgments
 
 - **Fallout Series** by Bethesda/Obsidian - for inspiration and theme
-- **[Fallout.wiki](fallout.wiki)** - for Property images and Property descriptions
+- **[Fallout.wiki](https://fallout.wiki)** - for Property images and Property descriptions
 - **FlatLaf** - Modern look and feel for Swing
 - **Gson** - JSON parsing
 - **Archive.org** - Default radio station tracks
