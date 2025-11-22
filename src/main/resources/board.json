@@ -1,0 +1,430 @@
+{
+  "boardName": "Vault-O-Poly",
+  "fields": [
+    {
+      "position": 0,
+      "type": "START",
+      "name": "GO!",
+      "description": "Collect 200 Caps as you pass.",
+      "passReward": 200
+    },
+    {
+      "position": 1,
+      "type": "PROPERTY",
+      "name": "The Pitt",
+      "description": "The Pitt is a Raider-dominated city built in the ruins of Pittsburgh, Pennsylvania. After the Great War, local gangs took over the area. Diseases such as Troglodyte Degeneration Contagion turned the populace into various types of hostile creatures such as Trogs and Wildmen.",
+      "purchaseCost": 60,
+      "propertyType": "SETTLEMENT",
+      "groupId": "wasteland",
+      "rentCosts": [2, 10, 30, 90, 160, 250],
+      "improvementCost": 50,
+      "imageUrl": "https://images.fallout.wiki/c/cf/The_Pitt_city.png"
+    },
+    {
+      "position": 2,
+      "type": "SPECIAL",
+      "name": "Raiders",
+      "description": "Raiders ambush you! Pay 200 Caps.",
+      "effect": "LOSE_CAPS",
+      "effectValue": 200
+    },
+    {
+      "position": 3,
+      "type": "PROPERTY",
+      "name": "Glowing Sea",
+      "description": "The Glowing Sea is the most highly irradiated region in the entire Commonwealth. According to local legend, it was ground zero for the high-yield nuclear blast that devastated most of Massachusetts.",
+      "purchaseCost": 60,
+      "propertyType": "SETTLEMENT",
+      "groupId": "wasteland",
+      "rentCosts": [4, 20, 60, 180, 320, 450],
+      "improvementCost": 50,
+      "imageUrl": "https://images.fallout.wiki/0/0a/Fallout4_E3_Wasteland.png"
+    },
+    {
+      "position": 4,
+      "type": "SPECIAL",
+      "name": "Wasteland Tax",
+      "description": "Pay 100 Caps in taxes.",
+      "effect": "LOSE_CAPS",
+      "effectValue": 100
+    },
+    {
+      "position": 5,
+      "type": "PROPERTY",
+      "name": "Galaxy News Radio",
+      "description": "Galaxy News Radio was a pre-War radio station based in Washington, D.C. and a subsidiary of Galaxy News Network. Galaxy News Radio has been repurposed by Three Dog in the GNR Building Plaza who reports on the happenings around the Capital Wasteland.",
+      "purchaseCost": 200,
+      "propertyType": "RADIO_STATION",
+      "groupId": "radio",
+      "rentCosts": [25, 50, 100, 200],
+      "improvementCost": 0,
+      "imageUrl": "https://images.fallout.wiki/3/33/GNRAdv.png"
+    },
+    {
+      "position": 6,
+      "type": "PROPERTY",
+      "name": "Junktown",
+      "description": "Junktown is a trading hub founded by Killian Darkwater’s grandfather.Weapons are only allowed in self-defense, and the gates close at night. Junktown lies southeast of Vault 13 and north of the Hub.",
+      "purchaseCost": 100,
+      "propertyType": "OUTPOST",
+      "groupId": "raider",
+      "rentCosts": [6, 30, 90, 270, 400, 550],
+      "improvementCost": 50,
+      "imageUrl": "https://images.fallout.wiki/a/a8/Fo1_Junktown_Postcard.png"
+    },
+    {
+      "position": 7,
+      "type": "SPECIAL",
+      "name": "Wasteland Event",
+      "description": "Draw an event card.",
+      "effect": "DRAW_EVENT",
+      "effectValue": 0
+    },
+    {
+      "position": 8,
+      "type": "PROPERTY",
+      "name": "Filly",
+      "description": "Filly is a post-war town constructed in the vicinity of Los Angeles prior to the destruction of Shady Sands. Filly has a reputation for people dying there, including the father, brothers, and aunt of a farmer who lives nearby. Ghouls are not welcome in Filly.",
+      "purchaseCost": 100,
+      "propertyType": "OUTPOST",
+      "groupId": "raider",
+      "rentCosts": [6, 30, 90, 270, 400, 550],
+      "improvementCost": 50,
+      "imageUrl": "https://images.fallout.wiki/5/5c/S1E2_Location_2.jpg"
+    },
+    {
+      "position": 9,
+      "type": "PROPERTY",
+      "name": "Rivet City",
+      "description": "Rivet City is a city located inside a decaying aircraft carrier in Washington, D.C.. It is the largest settlement in the Capital Wasteland.",
+      "purchaseCost": 120,
+      "propertyType": "SETTLEMENT",
+      "groupId": "raider",
+      "rentCosts": [8, 40, 100, 300, 450, 600],
+      "improvementCost": 50,
+      "imageUrl": "https://images.fallout.wiki/a/a5/Rivet_City_panorama.jpg"
+    },
+    {
+      "position": 10,
+      "type": "SPECIAL",
+      "name": "Jail",
+      "description": "Just visiting... hopefully.",
+      "effect": "NOTHING",
+      "effectValue": 0
+    },
+    {
+      "position": 11,
+      "type": "PROPERTY",
+      "name": "Shady Sands",
+      "description": "Shady Sands is a settlement in the New California Republic led by Aradesh. It is located five squares east of Vault 13. ",
+      "purchaseCost": 140,
+      "propertyType": "SETTLEMENT",
+      "groupId": "ncr",
+      "rentCosts": [10, 50, 150, 450, 625, 750],
+      "improvementCost": 100,
+      "imageUrl": "https://images.fallout.wiki/5/57/S1E8_Locations_6.jpg"
+    },
+    {
+      "position": 12,
+      "type": "RESOURCE",
+      "name": "Scrap Yard",
+      "description": "A valuable source of scrap.",
+      "resourceType": "SCRAP_MATERIAL",
+      "groupId": "utility",
+      "productionRate": 2
+    },
+    {
+      "position": 13,
+      "type": "PROPERTY",
+      "name": "HELIOS One",
+      "description": "HELIOS One is a pre-War concentrated solar energy plant consisting of an array of reflectors and the power plant itself. The Poseidon Energy plant houses steam turbines and machines required to transform the energy into usable electricity. It also contains the control system for two experimental satellite weapon systems, ARCHIMEDES and ARCHIMEDES II. ",
+      "purchaseCost": 140,
+      "propertyType": "SETTLEMENT",
+      "groupId": "ncr",
+      "rentCosts": [10, 50, 150, 450, 625, 750],
+      "improvementCost": 100,
+      "imageUrl": "https://images.fallout.wiki/7/75/FNV_Loction_Helios_One_2.png"
+    },
+    {
+      "position": 14,
+      "type": "PROPERTY",
+      "name": "Hoover Dam",
+      "description": "The Hoover Dam or Old World Wall is a hydroelectric dam on the Colorado River. It lies on the border between the former U.S. states of Arizona and Nevada and serves as a major location for events in the Mojave Wasteland.",
+      "purchaseCost": 160,
+      "propertyType": "SETTLEMENT",
+      "groupId": "ncr",
+      "rentCosts": [12, 60, 180, 500, 700, 900],
+      "improvementCost": 100,
+      "imageUrl": "https://images.fallout.wiki/thumb/a/a8/FNV_Hoover_Dam_C.png/1024px-FNV_Hoover_Dam_C.png"
+    },
+    {
+      "position": 15,
+      "type": "PROPERTY",
+      "name": "Radio New Vegas",
+      "description": "Radio New Vegas is a radio station in the Mojave Wasteland. The station is presented by Mr. New Vegas and plays both music and news. The news section covers the Courier's exploits as they progress, as well as various other topics. This radio station plays mostly Las Vegas influenced music from the 1940s, '50s, and '60s.",
+      "purchaseCost": 200,
+      "propertyType": "RADIO_STATION",
+      "groupId": "radio",
+      "rentCosts": [25, 50, 100, 200],
+      "improvementCost": 0,
+      "imageUrl": "https://images.fallout.wiki/thumb/4/43/7_of_Diamonds.jpg/800px-7_of_Diamonds.jpg"
+    },
+    {
+      "position": 16,
+      "type": "PROPERTY",
+      "name": "The New Vegas Strip",
+      "description": "'A city devoted to vice and sin - What's not to love?' — Courier",
+      "purchaseCost": 180,
+      "propertyType": "SETTLEMENT",
+      "groupId": "new_vegas_area",
+      "rentCosts": [14, 70, 200, 550, 750, 950],
+      "improvementCost": 100,
+      "imageUrl": "https://images.fallout.wiki/thumb/5/5e/Vault21.png/1024px-Vault21.png"
+    },
+    {
+      "position": 17,
+      "type": "SPECIAL",
+      "name": "Vault Event",
+      "description": "Draw a Community Chest card.",
+      "effect": "DRAW_EVENT",
+      "effectValue": 0
+    },
+    {
+      "position": 18,
+      "type": "PROPERTY",
+      "name": "Tenpenny Tower",
+      "description": "Tenpenny Tower is a fortified settlement in the Capital Wasteland. It is located out in the wastes west of the DC ruins, directly southwest of the RobCo Facility.",
+      "purchaseCost": 180,
+      "propertyType": "SETTLEMENT",
+      "groupId": "new_vegas_area",
+      "rentCosts": [14, 70, 200, 550, 750, 950],
+      "improvementCost": 100,
+      "imageUrl": "https://images.fallout.wiki/thumb/4/4e/Fo3_Tenpenny_Tower.jpg/1024px-Fo3_Tenpenny_Tower.jpg"
+    },
+    {
+      "position": 19,
+      "type": "PROPERTY",
+      "name": "Primm",
+      "description": "The other New Vegas.",
+      "purchaseCost": 200,
+      "propertyType": "SETTLEMENT",
+      "groupId": "new_vegas_area",
+      "rentCosts": [16, 80, 220, 600, 800, 1000],
+      "improvementCost": 100,
+      "imageUrl": "https://images.fallout.wiki/b/b9/FNV_Location_Primm.PNG"
+    },
+    {
+      "position": 20,
+      "type": "SPECIAL",
+      "name": "Responders Outpost",
+      "description": "A safe place to rest... for now.",
+      "effect": "NOTHING",
+      "effectValue": 0
+    },
+    {
+      "position": 21,
+      "type": "PROPERTY",
+      "name": "Vault 33",
+      "description": "It is an experimental Vault built in California. It is implied Vault 33 may have been built into a subway as it is called a subway vault. It was built to have a maximum capacity of 220 residents",
+      "purchaseCost": 220,
+      "propertyType": "SETTLEMENT",
+      "groupId": "vault_network",
+      "rentCosts": [18, 90, 250, 700, 875, 1050],
+      "improvementCost": 150,
+      "imageUrl": "https://images.fallout.wiki/thumb/b/be/S1E7_Location_V33.jpg/1024px-S1E7_Location_V33.jpg"
+    },
+    {
+      "position": 22,
+      "type": "SPECIAL",
+      "name": "Chance",
+      "description": "Draw a Chance card.",
+      "effect": "DRAW_EVENT",
+      "effectValue": 0
+    },
+    {
+      "position": 23,
+      "type": "PROPERTY",
+      "name": "Vault 32",
+      "description": "Part of a network of the Three Vaults near Santa Monica, Los Angeles, Vault 32 was directly connected with Vault 31 and 33. However, direct contact between the populations was limited - officially to prevent the spread of threats, but with the ability to come to each other's aid in times of need. The Vault remained sealed after the Great War, only exchanging population and necessary supplies with its sister Vaults. For decades, the dwellers were told that the surface was uninhabitable, but encouraged to prepare themselves for the eventual Reclamation Day.",
+      "purchaseCost": 220,
+      "propertyType": "SETTLEMENT",
+      "groupId": "vault_network",
+      "rentCosts": [18, 90, 250, 700, 875, 1050],
+      "improvementCost": 150,
+      "imageUrl": "https://images.fallout.wiki/thumb/5/55/Fallout_TV_S1Ep1_92.jpg/1024px-Fallout_TV_S1Ep1_92.jpg"
+    },
+    {
+      "position": 24,
+      "type": "PROPERTY",
+      "name": "Vault 31",
+      "description": "As part of the Three Vaults, Vault 31 is directly connected to two other Vaults, Vault 32 and Vault 33, forming a tripartite society. The residents of the other Vaults are told that Vault 31 is just like them and only differs in having higher-quality resources, education, and food.",
+      "purchaseCost": 240,
+      "propertyType": "SETTLEMENT",
+      "groupId": "vault_network",
+      "rentCosts": [20, 100, 300, 750, 925, 1100],
+      "improvementCost": 150,
+      "imageUrl": "https://images.fallout.wiki/3/32/S1E8_Locations_9.jpg"
+    },
+    {
+      "position": 25,
+      "type": "PROPERTY",
+      "name": "Diamond City Radio",
+      "description": "Diamond City Radio is a radio station in the Commonwealth, broadcast from Diamond City by DJ ravis Miles. The radio station plays a total of 37 songs, not including Magnolia's songs. ",
+      "purchaseCost": 200,
+      "propertyType": "RADIO_STATION",
+      "groupId": "radio",
+      "rentCosts": [25, 50, 100, 200],
+      "improvementCost": 0,
+      "imageUrl": "https://images.fallout.wiki/5/52/DiamondSignDCR01.png"
+    },
+    {
+      "position": 26,
+      "type": "PROPERTY",
+      "name": "Hidden Valley Bunker",
+      "description": "The Hidden Valley Bunker is a location in the Mojave Wasteland. It is located southeast of Sloan. There are four bunkers in close proximity to one another within Hidden Valley, one of which is the entrance to the home of the Brotherhood of Steel. ",
+      "purchaseCost": 260,
+      "propertyType": "OUTPOST",
+      "groupId": "brotherhood_steel",
+      "rentCosts": [22, 110, 330, 800, 975, 1150],
+      "improvementCost": 150,
+      "imageUrl": "https://images.fallout.wiki/4/41/Hidden_Valley_bunker.jpg"
+    },
+    {
+      "position": 27,
+      "type": "PROPERTY",
+      "name": "The Citadel",
+      "description": "The last bastion of the Brotherhood in DC.",
+      "purchaseCost": 260,
+      "propertyType": "OUTPOST",
+      "groupId": "brotherhood_steel",
+      "rentCosts": [22, 110, 330, 800, 975, 1150],
+      "improvementCost": 150,
+      "imageUrl": "https://images.fallout.wiki/6/65/Citadel_panorama.jpg"
+    },
+    {
+      "position": 28,
+      "type": "RESOURCE",
+      "name": "Poseidon Energy",
+      "description": "A vital power plant.",
+      "resourceType": "POWER",
+      "groupId": "utility",
+      "productionRate": 3
+    },
+    {
+      "position": 29,
+      "type": "PROPERTY",
+      "name": "Boneyard (LA)",
+      "description": "The ruins of Los Angeles.",
+      "purchaseCost": 280,
+      "propertyType": "OUTPOST",
+      "groupId": "brotherhood_steel",
+      "rentCosts": [24, 120, 360, 850, 1025, 1200],
+      "improvementCost": 150,
+      "imageUrl": "https://images.fallout.wiki/2/2c/Fallout_TV_S1E1_2.jpg"
+    },
+    {
+      "position": 30,
+      "type": "SPECIAL",
+      "name": "Go to Jail",
+      "description": "Go to Jail! You've been captured by the Enclave.",
+      "effect": "GO_TO_FIELD",
+      "effectValue": 10
+    },
+    {
+      "position": 31,
+      "type": "PROPERTY",
+      "name": "McCarran Airport",
+      "description": "The NCR's main base in the Mojave.",
+      "purchaseCost": 300,
+      "propertyType": "SETTLEMENT",
+      "groupId": "major_cities",
+      "rentCosts": [26, 130, 390, 900, 1100, 1275],
+      "improvementCost": 200,
+      "imageUrl": "https://images.fallout.wiki/b/b8/McCarranFrontage.jpg"
+    },
+    {
+      "position": 32,
+      "type": "PROPERTY",
+      "name": "Goodneighbor",
+      "description": "Of the people, for the people.",
+      "purchaseCost": 300,
+      "propertyType": "SETTLEMENT",
+      "groupId": "major_cities",
+      "rentCosts": [26, 130, 390, 900, 1100, 1275],
+      "improvementCost": 200,
+      "imageUrl": "https://images.fallout.wiki/a/a9/Goodneighbor-Fallout4.jpg"
+    },
+    {
+      "position": 33,
+      "type": "SPECIAL",
+      "name": "Vault Event",
+      "description": "Draw an event card.",
+      "effect": "DRAW_EVENT",
+      "effectValue": 0
+    },
+    {
+      "position": 34,
+      "type": "PROPERTY",
+      "name": "Diamond City",
+      "description": "The Great Green Jewel of the Commonwealth.",
+      "purchaseCost": 320,
+      "propertyType": "SETTLEMENT",
+      "groupId": "major_cities",
+      "rentCosts": [28, 150, 450, 1000, 1200, 1400],
+      "improvementCost": 200,
+      "imageUrl": "https://images.fallout.wiki/3/3d/Diamond_City_overview.jpg"
+    },
+    {
+      "position": 35,
+      "type": "PROPERTY",
+      "name": "Enclave Radio",
+      "description": "Propaganda broadcast from Raven Rock.",
+      "purchaseCost": 200,
+      "propertyType": "RADIO_STATION",
+      "groupId": "radio",
+      "rentCosts": [25, 50, 100, 200],
+      "improvementCost": 0,
+      "imageUrl": "https://images.fallout.wiki/thumb/9/90/Enclaveberet02.png/1024px-Enclaveberet02.png"
+    },
+    {
+      "position": 36,
+      "type": "SPECIAL",
+      "name": "Wasteland Event",
+      "description": "Draw an event card.",
+      "effect": "DRAW_EVENT",
+      "effectValue": 0
+    },
+    {
+      "position": 37,
+      "type": "SPECIAL",
+      "name": "Super-Mutant Tax",
+      "description": "Pay 100 Caps to a very large, very green 'merchant'.",
+      "effect": "LOSE_CAPS",
+      "effectValue": 100
+    },
+    {
+      "position": 38,
+      "type": "PROPERTY",
+      "name": "The Oil Rig",
+      "description": "Control Station ENCLAVE also known as Enclave Main Base, Presidential Rig, and Poseidon Energy Oil Rig served as the primary headquarters of the Enclave.",
+      "purchaseCost": 350,
+      "propertyType": "ENCLAVE_OUTPOST",
+      "groupId": "enclave_territory",
+      "rentCosts": [35, 175, 500, 1100, 1300, 1500],
+      "improvementCost": 200,
+      "imageUrl": "https://images.fallout.wiki/1/11/FO2_Loading_Screen_4.png"
+    },
+    {
+      "position": 39,
+      "type": "PROPERTY",
+      "name": "Raven Rock",
+      "description": "Navarro (also known as Navarro Refinery[1] and Camp Navarro[2]) is a pre-War installation, where a Poseidon Energy refinery and an Enclave military base are located, located north of San Francisco along the coastline. Navarro was subsequently overrun by the New California Republic, its inhabitants killed.[3] Navarro can be found fifteen squares south of Arroyo.",
+      "purchaseCost": 400,
+      "propertyType": "ENCLAVE_OUTPOST",
+      "groupId": "enclave_territory",
+      "rentCosts": [50, 200, 600, 1400, 1700, 2000],
+      "improvementCost": 200,
+      "imageUrl": "https://images.fallout.wiki/3/30/RavenRock.png"
+    }
+  ]
+}
