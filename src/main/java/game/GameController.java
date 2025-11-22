@@ -4,11 +4,7 @@ import board.Board;
 import board.fields.BoardField;
 import board.fields.PropertyField;
 import com.formdev.flatlaf.FlatDarkLaf;
-import mechanics.Dice;
-import mechanics.EventDeck;
-import mechanics.PropertyDevelopment;
-import mechanics.TradeSystem;
-import mechanics.TradeOffer;
+import mechanics.*;
 import players.Player;
 import resources.ResourceManager;
 import resources.ResourceType;
@@ -87,10 +83,13 @@ public class GameController {
 
     private Map<Player, PropertyField> pendingPropertyPurchases = new HashMap<>();
 
-    private Player pendingTradeRequester = null;
-    private Player pendingTradePartner = null;
-    private TradeOffer pendingOffer1 = null;
-    private TradeOffer pendingOffer2 = null;
+    private TradeSession currentTrade = null;
+
+    private static final int MAX_CHAT_MESSAGES = 200;
+    private int chatMessageCount = 0;
+
+    private mechanics.CasinoConfiguration casinoConfig;
+
     private boolean running = true;
 
     public GameController(UIInterface ui) {
@@ -104,6 +103,9 @@ public class GameController {
         this.propertyDevelopment = new PropertyDevelopment();
         this.tradeSystem = new TradeSystem();
         this.resourceManager = new ResourceManager();
+
+        // Initialize casino config once per game
+        this.casinoConfig = new mechanics.CasinoConfiguration();
     }
 
     public GameController(UIInterface ui, ObjectOutputStream out) {
@@ -113,6 +115,16 @@ public class GameController {
         this.isNetworkGame = true;
         this.board = new Board("board.json", ui);
         this.players = new CopyOnWriteArrayList<>();
+
+        // Initialize these for client side
+        this.dice = new Dice(2, 6);
+        this.eventDeck = new EventDeck();
+        this.propertyDevelopment = new PropertyDevelopment();
+        this.tradeSystem = new TradeSystem();
+        this.resourceManager = new ResourceManager();
+
+        // Initialize casino config
+        this.casinoConfig = new mechanics.CasinoConfiguration();
     }
 
     public void setSelfPlayer(Player self) {
@@ -221,6 +233,7 @@ public class GameController {
     /**
      * Generates an SHA-256 hash of a string, used for GIF caching.
      */
+    // SIMPLIFIED: Removed debug prints
     private String generateHash(String input) {
         try {
             MessageDigest digest = MessageDigest.getInstance("SHA-256");
@@ -233,7 +246,6 @@ public class GameController {
             }
             return hexString.toString();
         } catch (NoSuchAlgorithmException e) {
-            System.err.println("SHA-256 not found. Using simple hash code fallback.");
             return String.valueOf(input.hashCode());
         }
     }
@@ -313,17 +325,22 @@ public class GameController {
         }
     }
 
+    // OPTIMIZED: Reduced heartbeat frequency
     private void startHeartbeatLoop() {
         Thread heartbeat = new Thread(() -> {
             while (running) {
                 try {
-                    Thread.sleep(2000);
+                    // CHANGED: Increased from 2000ms to 5000ms (5 seconds)
+                    Thread.sleep(5000);
+
                     if (isNetworkGame && !clients.isEmpty()) {
+                        // Only send board state if there are clients
                         broadcastMessage(new NetworkMessage(
                                 NetworkMessage.MessageType.SYNC_BOARD_STATE,
                                 board.getFields()
                         ));
                     }
+
                     javax.swing.SwingUtilities.invokeLater(() -> {
                         if (baseUI instanceof SwingUI) {
                             ((SwingUI) baseUI).updateBoardState(board.getFields());
@@ -445,7 +462,10 @@ public class GameController {
             startNextTurn();
             return;
         }
-        this.currentCasinoConfig = new mechanics.CasinoConfiguration();
+
+        // REMOVED: this.currentCasinoConfig = new mechanics.CasinoConfiguration();
+        // Casino config now persists for the entire game
+
         gameState = GameState.PLAYER_TURN;
         ui.setPlayerTurn(currentPlayer);
         resourceManager.calculateResourceProduction(currentPlayer, ui);
@@ -605,17 +625,22 @@ public class GameController {
         ui.updatePlayerStats(player);
     }
 
+    // REFACTORED: Trade handling using TradeSession
     private void handleTrade(Player player) {
-        if (pendingTradeRequester != null) {
+        if (currentTrade != null) {
             ui.showNotification("A trade is already in progress! Please wait.");
             return;
         }
 
-        List<Player> otherPlayers = players.stream().filter(p -> p != player && p.isInGame()).collect(Collectors.toList());
+        List<Player> otherPlayers = players.stream()
+                .filter(p -> p != player && p.isInGame())
+                .collect(Collectors.toList());
+
         if (otherPlayers.isEmpty()) {
             ui.showNotification("There's no one left to trade with, you lone wanderer.");
             return;
         }
+
         String[] options = otherPlayers.stream().map(Player::getName).toArray(String[]::new);
         String choice = ui.askForSelection("Who do you want to trade with?", options);
         if (choice != null) {
@@ -623,20 +648,22 @@ public class GameController {
         }
     }
 
+
     private void startTrade(Player requester, String partnerName) {
         if (partnerName == null) return;
+
         Player partner = players.stream()
                 .filter(p -> p.getName().equals(partnerName) && p.isInGame())
                 .findFirst()
                 .orElse(null);
+
         if (partner == null) {
             ui.logMessage("Could not find trade partner.");
             return;
         }
-        pendingTradeRequester = requester;
-        pendingTradePartner = partner;
-        pendingOffer1 = new TradeOffer();
-        pendingOffer2 = new TradeOffer();
+
+        // Create new trade session
+        currentTrade = new TradeSession(requester, partner);
         requestOffer(requester, requester.getName() + ", what will you offer " + partner.getName() + "?");
     }
 
@@ -650,65 +677,73 @@ public class GameController {
     private void completeBuildOffer(Player player, TradeOffer offer) {
         if (offer == null) {
             ui.logMessage("Trade cancelled.");
-            clearPendingTrade();
+            currentTrade = null;
             return;
         }
-        if (player == pendingTradeRequester) {
-            pendingOffer1 = offer;
-            requestOffer(pendingTradePartner, pendingTradePartner.getName() + ", what will you offer " + pendingTradeRequester.getName() + " in return?");
-        } else if (player == pendingTradePartner) {
-            pendingOffer2 = offer;
+
+        if (currentTrade == null) {
+            ui.logMessage("No active trade session.");
+            return;
+        }
+
+        if (player.equals(currentTrade.getRequester())) {
+            currentTrade.setRequesterOffer(offer);
+            requestOffer(currentTrade.getPartner(),
+                    currentTrade.getPartner().getName() + ", what will you offer " +
+                            currentTrade.getRequester().getName() + " in return?");
+        } else if (player.equals(currentTrade.getPartner())) {
+            currentTrade.setPartnerOffer(offer);
             proposeTrade();
         }
     }
 
     private void proposeTrade() {
-        String p1Name = pendingTradeRequester.getName();
-        String p2Name = pendingTradePartner.getName();
-        String summary = "--- THE PROPOSED DEAL ---\n\n" +
-                p1Name + " offers:\n" +
-                pendingOffer1.getSummary() + "\n" +
-                p2Name + " offers:\n" +
-                pendingOffer2.getSummary() + "\n" +
-                "Do you accept this deal?";
-        ui.askForBoolean(pendingTradeRequester, summary);
-        ui.askForBoolean(pendingTradePartner, summary);
+        if (currentTrade == null) return;
+
+        String summary = currentTrade.getSummary();
+        ui.askForBoolean(currentTrade.getRequester(), summary);
+        ui.askForBoolean(currentTrade.getPartner(), summary);
     }
 
     private void completeTradeAcceptance(Player player, boolean accepted) {
-        if (pendingTradeRequester == null || pendingTradePartner == null || pendingOffer1 == null || pendingOffer2 == null) {
-            ui.logMessage("[TradeSystem] Ignoring duplicate/late trade response from " + player.getName());
+        if (currentTrade == null) {
+            ui.logMessage("[TradeSystem] No active trade session.");
             return;
         }
-        if (player == pendingTradeRequester) {
-            pendingOffer1.responseReceived = true;
-            pendingOffer1.accepted = accepted;
-        } else if (player == pendingTradePartner) {
-            pendingOffer2.responseReceived = true;
-            pendingOffer2.accepted = accepted;
-        }
-        if (pendingOffer1.responseReceived && pendingOffer2.responseReceived) {
-            if (pendingOffer1.accepted && pendingOffer2.accepted) {
-                ui.logMessage("Trade accepted by both parties!");
-                if (tradeSystem.executeTrade(pendingTradeRequester, pendingOffer1, pendingTradePartner, pendingOffer2, ui, board)) {
-                    ui.logMessage("Trade successful!");
-                    ui.updatePlayerStats(pendingTradeRequester);
-                    ui.updatePlayerStats(pendingTradePartner);
 
+        if (!currentTrade.isPlayerInvolved(player)) {
+            ui.logMessage("[TradeSystem] Player not involved in current trade.");
+            return;
+        }
+
+        // Record response
+        if (player.equals(currentTrade.getRequester())) {
+            currentTrade.setRequesterResponse(accepted);
+        } else if (player.equals(currentTrade.getPartner())) {
+            currentTrade.setPartnerResponse(accepted);
+        }
+
+        // Check if both responses received
+        if (currentTrade.bothResponsesReceived()) {
+            if (currentTrade.bothAccepted()) {
+                ui.logMessage("Trade accepted by both parties!");
+                if (tradeSystem.executeTrade(
+                        currentTrade.getRequester(),
+                        currentTrade.getRequesterOffer(),
+                        currentTrade.getPartner(),
+                        currentTrade.getPartnerOffer(),
+                        ui,
+                        board)) {
+                    ui.logMessage("Trade successful!");
+                    ui.updatePlayerStats(currentTrade.getRequester());
+                    ui.updatePlayerStats(currentTrade.getPartner());
                     refreshPropertiesWindow();
                 }
             } else {
                 ui.logMessage("Trade rejected.");
             }
-            clearPendingTrade();
+            currentTrade = null; // Clear session
         }
-    }
-
-    private void clearPendingTrade() {
-        pendingTradeRequester = null;
-        pendingTradePartner = null;
-        pendingOffer1 = null;
-        pendingOffer2 = null;
     }
 
     private void handleBankruptcy(Player player) {
@@ -1046,30 +1081,32 @@ public class GameController {
     private static final String DEFAULT_COLOR = "#AAAAAA";
 
     /**
-     * Handles receiving raw chat data (Name + Message).
-     * Finds the local Player object (to get the correct Token enum)
-     * and generates the HTML using LOCAL resources.
+     * Handles receiving raw chat data (Name + Token + Message).
+     * Generates the HTML using LOCAL resources.
      */
-    public void handleIncomingChat(String senderName, String message) {
+    // REFACTORED: Chat message handling with limit
+    public void handleIncomingChat(String senderName, PlayerToken token, String message) {
         Player p = getPlayerByName(senderName);
 
-        // If player not found (e.g. spectator), create a dummy so we don't crash
         if (p == null) {
-            p = new Player(senderName, PlayerToken.VAULT_BOY);
+            p = new Player(senderName, token != null ? token : PlayerToken.VAULT_BOY);
         }
 
-        // Generate HTML locally.
-        // getPlayerIconTag will now find the image on THIS computer.
         String html = formatPublicMessage(p, message);
-
-        // Display on UI
         baseUI.displayChatMessage(html);
+
+        // ADDED: Chat message limit to prevent memory issues
+        chatMessageCount++;
+        if (chatMessageCount > MAX_CHAT_MESSAGES) {
+            chatMessageCount = 0;
+            baseUI.clearLog();
+            baseUI.displayChatMessage("<p class=\"system\">--- Chat history cleared (message limit reached) ---</p>");
+        }
     }
 
     public void sendChatMessage(String message) {
         if (message == null || message.isBlank()) return;
 
-        // Handle local commands (/casino, etc)
         if (message.trim().equalsIgnoreCase("/casino")) {
             doCasino();
             return;
@@ -1077,11 +1114,9 @@ public class GameController {
 
         Player player = isNetworkGame ? this.self : players.get(currentPlayerIndex);
 
-        // Handle Slash Commands
         if (message.startsWith("/")) {
             String command = message.split(" ")[0].toLowerCase();
 
-            // Client-side commands that don't need network relay immediately
             if (command.equals("/radio") || command.equals("/music") ||
                     command.equals("/log") || command.equals("/history") ||
                     command.equals("/help")) {
@@ -1089,7 +1124,6 @@ public class GameController {
                 return;
             }
 
-            // If it's a command that needs to go to server (like /roll, /pay), send it as a REQUEST
             if (isNetworkGame && networkOut != null) {
                 sendNetworkMessage(new NetworkMessage(NetworkMessage.MessageType.REQUEST_CHAT_MESSAGE, message));
                 return;
@@ -1099,21 +1133,16 @@ public class GameController {
             return;
         }
 
-        // Normal Chat Message Handling
+        // Normal Chat Message
         if (isNetworkGame && networkOut != null) {
-            // CLIENT: Send request to server. Do NOT display locally yet (prevents duplicates).
             sendNetworkMessage(new NetworkMessage(NetworkMessage.MessageType.REQUEST_CHAT_MESSAGE, message));
         } else {
-            // HOST / LOCAL:
             if (isNetworkGame) {
-                // Host displays locally
-                handleIncomingChat(player.getName(), message);
-                // Host broadcasts RAW data to clients
-                String[] payload = { player.getName(), message };
+                handleIncomingChat(player.getName(), player.getToken(), message);
+                Object[] payload = { player.getName(), player.getToken(), message };
                 broadcastMessage(new NetworkMessage(NetworkMessage.MessageType.PLAYER_CHAT, payload));
             } else {
-                // Single player / Local hotseat
-                handleIncomingChat(player.getName(), message);
+                handleIncomingChat(player.getName(), player.getToken(), message);
             }
         }
     }
@@ -1248,45 +1277,36 @@ public class GameController {
                 String start = "0";
                 String duration = "10";
 
-                // --- FIX: Apply variable max duration ---
-                double maxDurationSeconds = 30.0;
-                // If the player issuing the command is the host instance, allow 60s
-                if (player.equals(this.self)) {
-                    maxDurationSeconds = 60.0;
-                }
+                // Max duration based on who's requesting
+                double maxDurationSeconds = player.equals(this.self) ? 60.0 : 30.0;
 
                 int argIdx = cleanFlag ? 3 : 2;
 
-                // Arg 1: Start Time
                 if (parts.length > argIdx) {
                     if (parts[argIdx].matches("[0-9:.]+")) {
                         start = parts[argIdx];
                     }
                 }
 
-                // Arg 2: Duration (FIXED CLAMP LOGIC)
                 if (parts.length > argIdx + 1) {
                     if (parts[argIdx + 1].matches("[0-9.]+")) {
                         double d = Double.parseDouble(parts[argIdx + 1]);
-
                         if (d > maxDurationSeconds) {
-                            d = maxDurationSeconds; // Clamp to allowed maximum
+                            d = maxDurationSeconds;
                             sendPrivateMessage(player, String.format("Duration clamped to max allowed: %.0fs.", maxDurationSeconds));
                         }
                         duration = String.valueOf(d);
                     }
                 }
 
-                // Calculate dynamic download limit
-                double startSec = parseTime(start);
-                double durSec = parseTime(duration);
-                long calcLimit = (long) (20 * 1024 * 1024 + (startSec + durSec) * 1.5 * 1024 * 1024);
+                long calcLimit = (long) (20 * 1024 * 1024 + (parseTime(start) + parseTime(duration)) * 1.5 * 1024 * 1024);
 
                 String cleanPath = url;
                 if (cleanPath.contains("?")) cleanPath = cleanPath.substring(0, cleanPath.indexOf("?"));
                 String lowerPath = cleanPath.toLowerCase();
 
-                if (util.ImageConverter.isWebM(url) || lowerPath.endsWith(".mkv") || lowerPath.endsWith(".mov") || lowerPath.endsWith(".avi") || lowerPath.endsWith(".mp4") || lowerPath.endsWith(".m4v")) {
+                if (util.ImageConverter.isWebM(url) || lowerPath.endsWith(".mkv") || lowerPath.endsWith(".mov") ||
+                        lowerPath.endsWith(".avi") || lowerPath.endsWith(".mp4") || lowerPath.endsWith(".m4v")) {
                     processVideoToGif(url, start, duration, calcLimit);
                     return;
                 }
@@ -1307,25 +1327,27 @@ public class GameController {
                 }
                 ui.displayChatMessage(formatGifMessage(player, url));
                 break;
-            default:
-                sendPrivateMessage(player, "<p class=\"log\">"+getTimestamp()+" <i>[System] Unknown command.</i></p>");
-                break;
-            case "/radio": case "/music":
+
+            case "/radio":
+            case "/music":
                 ui.showRadioWindow();
                 sendPrivateMessage(player, "<p class=\"log\">" + getTimestamp() + " <i>[System] Opening Radio Tuner...</i></p>");
                 break;
-            case "/log": case "/history":
+
+            case "/log":
+            case "/history":
                 ui.showFullLog();
                 sendPrivateMessage(player, "<p class=\"log\">" + getTimestamp() + " <i>[System] Opening Full Log window...</i></p>");
                 break;
-            case "/flush":
-                // 1. Clear the visual chat panel.
-                ui.clearLog();
 
-                // 2. Send a system message to confirm the action.
-                // Note: The client must receive the broadcasted clearLog() first,
-                // and then receive this message.
+            case "/flush":
+                ui.clearLog();
+                chatMessageCount = 0; // Reset counter
                 sendPrivateMessage(player, "<p class=\"log\">" + getTimestamp() + " <i>[System] Chat history cleared.</i></p>");
+                break;
+
+            default:
+                sendPrivateMessage(player, "<p class=\"log\">"+getTimestamp()+" <i>[System] Unknown command.</i></p>");
                 break;
         }
     }
@@ -1594,11 +1616,11 @@ public class GameController {
         } catch (Exception e) { e.printStackTrace(); }
     }
 
-    // --- CRITICAL FIX: handleNetworkMessage Threading ---
+    // CRITICAL FIX: handleNetworkMessage with proper threading
     public void handleNetworkMessage(NetworkMessage msg, ClientHandler sender) {
         Player player = (sender != null) ? sender.getPlayer() : null;
 
-        // Basic validation
+        // Validation
         if (player != null && !players.isEmpty() && player != players.get(currentPlayerIndex)) {
             switch (msg.getType()) {
                 case REQUEST_ROLL:
@@ -1611,30 +1633,51 @@ public class GameController {
         }
 
         switch (msg.getType()) {
-            // --- Non-Blocking Requests ---
-            case REQUEST_ROLL: doRoll(); break;
-            case REQUEST_IMPROVE: handleImprovement(player); break;
-            case REQUEST_TRADE: handleTrade(player); break;
+            case REQUEST_ROLL:
+                doRoll();
+                break;
+
+            case REQUEST_IMPROVE:
+                handleImprovement(player);
+                break;
+
+            case REQUEST_TRADE:
+                handleTrade(player);
+                break;
+
             case RESPONSE_BUY_PROPERTY:
                 PropertyField field = pendingPropertyPurchases.get(player);
                 if (field != null) completePropertyPurchase(player, (Boolean) msg.getPayload(), field);
                 break;
-            case RESPONSE_IMPROVE_SELECTION: completeImprovement(player, (String) msg.getPayload()); break;
-            case RESPONSE_TRADE_SELECTION: startTrade(player, (String) msg.getPayload()); break;
-            case RESPONSE_BUILD_OFFER: completeBuildOffer(player, (TradeOffer) msg.getPayload()); break;
-            case RESPONSE_ACCEPT_TRADE: completeTradeAcceptance(player, (Boolean) msg.getPayload()); break;
+
+            case RESPONSE_IMPROVE_SELECTION:
+                completeImprovement(player, (String) msg.getPayload());
+                break;
+
+            case RESPONSE_TRADE_SELECTION:
+                startTrade(player, (String) msg.getPayload());
+                break;
+
+            case RESPONSE_BUILD_OFFER:
+                completeBuildOffer(player, (TradeOffer) msg.getPayload());
+                break;
+
+            case RESPONSE_ACCEPT_TRADE:
+                completeTradeAcceptance(player, (Boolean) msg.getPayload());
+                break;
+
             case REQUEST_CASINO:
                 if (player != null && player == players.get(currentPlayerIndex)) {
-                    sender.sendMessage(new NetworkMessage(NetworkMessage.MessageType.SHOW_CASINO_DIALOG, this.currentCasinoConfig));
+                    // CHANGED: Use persistent casino config
+                    sender.sendMessage(new NetworkMessage(NetworkMessage.MessageType.SHOW_CASINO_DIALOG, this.casinoConfig));
                 }
                 break;
+
             case RESPONSE_CASINO_RESULT:
                 if (player != null) applyCasinoResult(player, (mechanics.CasinoResult) msg.getPayload());
                 break;
 
-            // --- FIX: Blocking UI Requests Wrapped in invokeLater ---
-            // This frees the ClientHandler thread immediately so heartbeats don't timeout.
-
+            // Blocking UI requests wrapped in invokeLater
             case SHOW_CASINO_DIALOG:
                 mechanics.CasinoConfiguration config = (mechanics.CasinoConfiguration) msg.getPayload();
                 SwingUtilities.invokeLater(() -> ui.showCasinoDialog(this.self, this, config));
@@ -1644,11 +1687,11 @@ public class GameController {
                 String boolPrompt = (String) msg.getPayload();
                 SwingUtilities.invokeLater(() -> {
                     boolean result = ui.askForBoolean(boolPrompt);
-                    // Send response manually since we are in the controller context
                     if (networkOut != null) {
                         try {
                             networkOut.writeObject(new NetworkMessage(NetworkMessage.MessageType.RESPONSE_BUY_PROPERTY, result));
-                            networkOut.flush(); networkOut.reset();
+                            networkOut.flush();
+                            networkOut.reset();
                         } catch(Exception e) { e.printStackTrace(); }
                     }
                 });
@@ -1660,7 +1703,7 @@ public class GameController {
                 String[] selOptions = (String[]) selData[1];
                 SwingUtilities.invokeLater(() -> {
                     String choice = ui.askForSelection(selPrompt, selOptions);
-                    NetworkMessage.MessageType type = NetworkMessage.MessageType.LOG_MESSAGE; // Default
+                    NetworkMessage.MessageType type = NetworkMessage.MessageType.LOG_MESSAGE;
                     if (selPrompt.contains("jail")) type = NetworkMessage.MessageType.RESPONSE_JAIL_ACTION;
                     else if (selPrompt.contains("improve")) type = NetworkMessage.MessageType.RESPONSE_IMPROVE_SELECTION;
                     else if (selPrompt.contains("trade")) type = NetworkMessage.MessageType.RESPONSE_TRADE_SELECTION;
@@ -1668,7 +1711,8 @@ public class GameController {
                     if (networkOut != null) {
                         try {
                             networkOut.writeObject(new NetworkMessage(type, choice));
-                            networkOut.flush(); networkOut.reset();
+                            networkOut.flush();
+                            networkOut.reset();
                         } catch(Exception e) { e.printStackTrace(); }
                     }
                 });
@@ -1681,7 +1725,8 @@ public class GameController {
                     if (networkOut != null) {
                         try {
                             networkOut.writeObject(new NetworkMessage(NetworkMessage.MessageType.RESPONSE_BUILD_OFFER, offer));
-                            networkOut.flush(); networkOut.reset();
+                            networkOut.flush();
+                            networkOut.reset();
                         } catch(Exception e) { e.printStackTrace(); }
                     }
                 });
@@ -1694,7 +1739,8 @@ public class GameController {
                     if (networkOut != null) {
                         try {
                             networkOut.writeObject(new NetworkMessage(NetworkMessage.MessageType.RESPONSE_ACCEPT_TRADE, accepted));
-                            networkOut.flush(); networkOut.reset();
+                            networkOut.flush();
+                            networkOut.reset();
                         } catch(Exception e) { e.printStackTrace(); }
                     }
                 });
@@ -1704,37 +1750,24 @@ public class GameController {
                 if (player != null) {
                     String message = (String) msg.getPayload();
 
-                    // Check for commands
                     if (message.startsWith("/")) {
                         handleChatCommand(player, message);
                         return;
                     }
 
-                    // It's a standard chat message.
-                    // 1. Display on Host UI (Locally)
-                    handleIncomingChat(player.getName(), message);
-
-                    // 2. Broadcast RAW DATA to all clients (including sender)
-                    // Using PLAYER_CHAT ensures clients generate HTML locally.
-                    String[] payload = { player.getName(), message };
+                    // Standard chat message
+                    handleIncomingChat(player.getName(), player.getToken(), message);
+                    Object[] payload = { player.getName(), player.getToken(), message };
                     broadcastMessage(new NetworkMessage(NetworkMessage.MessageType.PLAYER_CHAT, payload));
                 }
                 break;
 
-            // --- CLIENT RECEIVING RAW CHAT ---
             case PLAYER_CHAT:
-                // This message comes from the Server to the Client
-                String[] data = (String[]) msg.getPayload();
-                String senderName = data[0];
-                String text = data[1];
-
-                // Client generates HTML using local assets
-                handleIncomingChat(senderName, text);
-                break;
-
-            case BROADCAST_IMAGE_DATA:
-                // OBSOLETE: Old P2P logic is no longer used.
-                ui.logMessage("Old BROADCAST_IMAGE_DATA message received and ignored.");
+                Object[] chatData = (Object[]) msg.getPayload();
+                String senderName = (String) chatData[0];
+                PlayerToken senderToken = (PlayerToken) chatData[1];
+                String text = (String) chatData[2];
+                handleIncomingChat(senderName, senderToken, text);
                 break;
         }
     }
@@ -1796,9 +1829,13 @@ public class GameController {
     }
 
     private void handleCasino(Player player) {
-        if (this.currentCasinoConfig == null) this.currentCasinoConfig = new mechanics.CasinoConfiguration();
+        // CHANGED: Use persistent casino config
         if (baseUI instanceof SwingUI) {
-            mechanics.CasinoDialog dialog = new mechanics.CasinoDialog(((SwingUI) baseUI).getGameWindow(), player, this.currentCasinoConfig);
+            mechanics.CasinoDialog dialog = new mechanics.CasinoDialog(
+                    ((SwingUI) baseUI).getGameWindow(),
+                    player,
+                    this.casinoConfig
+            );
             dialog.setVisible(true);
             mechanics.CasinoResult result = dialog.getResult();
             applyCasinoResult(player, result);
@@ -1828,23 +1865,37 @@ public class GameController {
     private void restoreGameState(GameSaveState state) {
         this.players = state.players;
         this.currentPlayerIndex = state.currentPlayerIndex;
-        this.currentCasinoConfig = state.casinoConfig;
+
+        // CHANGED: Restore the casino config from save
+        this.casinoConfig = state.casinoConfig;
+
         this.board.setFields(state.fields);
         ui.resetBoard();
         ui.showBoard(board.getFields());
+
         for (Player p : players) {
             ui.createPlayerToken(p);
             ui.movePlayerToken(p.getToken(), p.getPosition());
             ui.updatePlayerStats(p);
-            for (BoardField f : p.getOwnedProperties()) if (f instanceof PropertyField) ui.updatePropertyOwner(f.getPosition(), p);
+            for (BoardField f : p.getOwnedProperties()) {
+                if (f instanceof PropertyField) {
+                    ui.updatePropertyOwner(f.getPosition(), p);
+                }
+            }
         }
-        if (!players.isEmpty()) { this.self = players.get(0); for(Player p : players) p.setNetworkHandler(null); }
+
+        if (!players.isEmpty()) {
+            this.self = players.get(0);
+            for(Player p : players) p.setNetworkHandler(null);
+        }
+
         ui.logMessage("--- GAME LOADED ---");
         startNextTurn();
     }
 
     public int getCurrentPlayerIndex() { return currentPlayerIndex; }
-    public mechanics.CasinoConfiguration getCasinoConfig() { return currentCasinoConfig; }
+    // CHANGED: Return persistent config
+    public mechanics.CasinoConfiguration getCasinoConfig() { return casinoConfig; }
 
     public void playLocalSound(String filename) {
         try {
@@ -1854,6 +1905,7 @@ public class GameController {
         } catch (Exception e) { e.printStackTrace(); }
     }
 
+    // SIMPLIFIED NetworkSafeUI - Remove unnecessary wrapping
     class NetworkSafeUI implements UIInterface {
         private GameController controller;
         private UIInterface localUI;
@@ -1863,11 +1915,32 @@ public class GameController {
             this.localUI = localUI;
         }
 
-        public void updateBoardState(List<BoardField> fields) { if (localUI instanceof SwingUI) ((SwingUI) localUI).updateBoardState(fields); }
-        @Override public void showNotification(String message) { if (controller.isNetworkGame) controller.broadcastMessage(new NetworkMessage(NetworkMessage.MessageType.SHOW_NOTIFICATION, message)); localUI.showNotification(message); }
-        @Override public void logMessage(String message) { String timedMessage = getTimestamp() + " " + message; if (controller.isNetworkGame) controller.broadcastMessage(new NetworkMessage(NetworkMessage.MessageType.LOG_MESSAGE, timedMessage)); localUI.logMessage(timedMessage); }
-        @Override public void displayChatMessage(String message) { if (controller.isNetworkGame) controller.broadcastMessage(new NetworkMessage(NetworkMessage.MessageType.CHAT_MESSAGE, message)); localUI.displayChatMessage(message); }
-        @Override public void clearLog() { if (controller.isNetworkGame) controller.broadcastMessage(new NetworkMessage(NetworkMessage.MessageType.CLEAR_LOG, null)); localUI.clearLog(); }
+        public void updateBoardState(List<BoardField> fields) {
+            if (localUI instanceof SwingUI) ((SwingUI) localUI).updateBoardState(fields);
+        }
+
+        @Override public void showNotification(String message) {
+            if (controller.isNetworkGame) controller.broadcastMessage(new NetworkMessage(NetworkMessage.MessageType.SHOW_NOTIFICATION, message));
+            localUI.showNotification(message);
+        }
+
+        @Override public void logMessage(String message) {
+            String timedMessage = getTimestamp() + " " + message;
+            if (controller.isNetworkGame) controller.broadcastMessage(new NetworkMessage(NetworkMessage.MessageType.LOG_MESSAGE, timedMessage));
+            localUI.logMessage(timedMessage);
+        }
+
+        @Override public void displayChatMessage(String message) {
+            if (controller.isNetworkGame) controller.broadcastMessage(new NetworkMessage(NetworkMessage.MessageType.CHAT_MESSAGE, message));
+            localUI.displayChatMessage(message);
+        }
+
+        @Override public void clearLog() {
+            if (controller.isNetworkGame) controller.broadcastMessage(new NetworkMessage(NetworkMessage.MessageType.CLEAR_LOG, null));
+            localUI.clearLog();
+        }
+
+        // SIMPLIFIED: These don't need network wrapping
         @Override public void resetFullLog() { localUI.resetFullLog(); }
         @Override public void showFullLog() { localUI.showFullLog(); }
         @Override public void showMainMenu() { localUI.showMainMenu(); }
@@ -1875,8 +1948,14 @@ public class GameController {
         @Override public void hideGameWindow() { localUI.hideGameWindow(); }
         @Override public void setGameController(GameController controller) { localUI.setGameController(controller); }
         @Override public void show() { localUI.show(); }
+
         @Override public void showBoard(List<BoardField> fields) { localUI.showBoard(fields); }
-        @Override public void createPlayerToken(Player player) { if (controller.isNetworkGame) controller.broadcastMessage(new NetworkMessage(NetworkMessage.MessageType.ADD_PLAYER_TOKEN, player)); localUI.createPlayerToken(player); }
+
+        @Override public void createPlayerToken(Player player) {
+            if (controller.isNetworkGame) controller.broadcastMessage(new NetworkMessage(NetworkMessage.MessageType.ADD_PLAYER_TOKEN, player));
+            localUI.createPlayerToken(player);
+        }
+
         @Override public void removePlayerToken(PlayerToken token) {
             if (controller.isNetworkGame) {
                 Player playerToRemove = controller.getPlayers().stream().filter(p -> p.getToken() == token).findFirst().orElse(null);
@@ -1884,8 +1963,17 @@ public class GameController {
             }
             localUI.removePlayerToken(token);
         }
-        @Override public void movePlayerToken(PlayerToken token, int newPosition) { if (controller.isNetworkGame) controller.broadcastMessage(new NetworkMessage(NetworkMessage.MessageType.MOVE_PLAYER_TOKEN, new Object[]{token, newPosition})); localUI.movePlayerToken(token, newPosition); }
-        @Override public void updatePlayerStats(Player player) { if (controller.isNetworkGame) controller.broadcastMessage(new NetworkMessage(NetworkMessage.MessageType.UPDATE_PLAYER_STATS, player)); localUI.updatePlayerStats(player); }
+
+        @Override public void movePlayerToken(PlayerToken token, int newPosition) {
+            if (controller.isNetworkGame) controller.broadcastMessage(new NetworkMessage(NetworkMessage.MessageType.MOVE_PLAYER_TOKEN, new Object[]{token, newPosition}));
+            localUI.movePlayerToken(token, newPosition);
+        }
+
+        @Override public void updatePlayerStats(Player player) {
+            if (controller.isNetworkGame) controller.broadcastMessage(new NetworkMessage(NetworkMessage.MessageType.UPDATE_PLAYER_STATS, player));
+            localUI.updatePlayerStats(player);
+        }
+
         @Override public void updatePropertyOwner(int position, Player owner) {
             if (controller.isNetworkGame) {
                 PlayerToken token = (owner != null) ? owner.getToken() : null;
@@ -1893,9 +1981,19 @@ public class GameController {
             }
             localUI.updatePropertyOwner(position, owner);
         }
-        @Override public void resetBoard() { if (controller.isNetworkGame) controller.broadcastMessage(new NetworkMessage(NetworkMessage.MessageType.RESET_UI, null)); localUI.resetBoard(); }
+
+        @Override public void resetBoard() {
+            if (controller.isNetworkGame) controller.broadcastMessage(new NetworkMessage(NetworkMessage.MessageType.RESET_UI, null));
+            localUI.resetBoard();
+        }
+
         @Override public void resetStats() { localUI.resetStats(); }
-        @Override public void setPlayerTurn(Player player) { if (controller.isNetworkGame) controller.broadcastMessage(new NetworkMessage(NetworkMessage.MessageType.SET_PLAYER_TURN, player)); localUI.setPlayerTurn(player); }
+
+        @Override public void setPlayerTurn(Player player) {
+            if (controller.isNetworkGame) controller.broadcastMessage(new NetworkMessage(NetworkMessage.MessageType.SET_PLAYER_TURN, player));
+            localUI.setPlayerTurn(player);
+        }
+
         @Override public void setControlsEnabled(boolean roll, boolean improve, boolean trade) {
             if (controller.isNetworkGame) {
                 if (players.isEmpty()) return;
@@ -1905,45 +2003,60 @@ public class GameController {
                 else localUI.setControlsEnabled(roll, improve, trade);
             } else localUI.setControlsEnabled(roll, improve, trade);
         }
+
+        // SIMPLIFIED: These are local-only operations
         @Override public String askForString(String prompt) { return localUI.askForString(prompt); }
         @Override public int askForInt(String prompt, int min, int max) { return localUI.askForInt(prompt, min, max); }
         @Override public boolean askForBoolean(String prompt) { return localUI.askForBoolean(prompt); }
+
         @Override public boolean askForBoolean(Player player, String prompt) {
             if (isNetworkGame) {
                 ClientHandler h = getHandlerForPlayer(player);
-                if (h != null) { h.sendMessage(new NetworkMessage(NetworkMessage.MessageType.REQUEST_ACCEPT_TRADE, prompt)); return false; }
+                if (h != null) {
+                    h.sendMessage(new NetworkMessage(NetworkMessage.MessageType.REQUEST_ACCEPT_TRADE, prompt));
+                    return false;
+                }
             }
             boolean response = localUI.askForBoolean(prompt);
             if (isNetworkGame) completeTradeAcceptance(player, response);
             return response;
         }
+
         @Override public String askForSelection(String prompt, String[] options) {
             if (players.isEmpty()) return localUI.askForSelection(prompt, options);
             Player p = players.get(currentPlayerIndex);
             if (isNetworkGame) {
                 ClientHandler h = getHandlerForPlayer(p);
-                if (h != null) { h.sendMessage(new NetworkMessage(NetworkMessage.MessageType.SHOW_SELECTION_DIALOG, new Object[]{prompt, options})); return null; }
+                if (h != null) {
+                    h.sendMessage(new NetworkMessage(NetworkMessage.MessageType.SHOW_SELECTION_DIALOG, new Object[]{prompt, options}));
+                    return null;
+                }
             }
             return localUI.askForSelection(prompt, options);
         }
+
         @Override public TradeOffer askForTradeOffer(Player player, String prompt) {
             if (isNetworkGame) {
                 ClientHandler h = getHandlerForPlayer(player);
-                if (h != null) { h.sendMessage(new NetworkMessage(NetworkMessage.MessageType.REQUEST_BUILD_OFFER, prompt)); return null; }
+                if (h != null) {
+                    h.sendMessage(new NetworkMessage(NetworkMessage.MessageType.REQUEST_BUILD_OFFER, prompt));
+                    return null;
+                }
             }
             TradeOffer offer = localUI.askForTradeOffer(player, prompt);
             if (isNetworkGame) completeBuildOffer(player, offer);
             return offer;
         }
+
+        // SIMPLIFIED: These don't need network wrapping
         @Override public void showFullImage(String imageUrl) { localUI.showFullImage(imageUrl); }
-        @Override public void showCasinoDialog(Player player, GameController controller, mechanics.CasinoConfiguration config) { localUI.showCasinoDialog(player, controller, config); }
+        @Override public void showCasinoDialog(Player player, GameController controller, mechanics.CasinoConfiguration config) {
+            localUI.showCasinoDialog(player, controller, config);
+        }
         @Override public void showRadioWindow() { localUI.showRadioWindow(); }
         @Override public void stopRadio() { localUI.stopRadio(); }
         @Override public void showProgress(String s, int p) { localUI.showProgress(s, p); }
         @Override public void hideProgress() { localUI.hideProgress(); }
-        @Override
-        public String[] askForTunnelDetails(String prompt) {
-            return localUI.askForTunnelDetails(prompt);
-        }
+        @Override public String[] askForTunnelDetails(String prompt) { return localUI.askForTunnelDetails(prompt); }
     }
 }

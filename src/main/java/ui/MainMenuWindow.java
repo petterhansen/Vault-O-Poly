@@ -69,12 +69,8 @@ public class MainMenuWindow extends JFrame {
         userLabel.setForeground(Color.WHITE);
         userPanel.add(userLabel, BorderLayout.WEST);
 
-        this.usernameField = new JTextField("Wanderer");
-        usernameField.setFont(GameWindow.FALLOUT_FONT);
-        usernameField.setBackground(GameWindow.DARK_BACKGROUND);
-        usernameField.setForeground(GameWindow.FALLOUT_GREEN);
-        usernameField.setCaretColor(GameWindow.FALLOUT_GREEN);
-        usernameField.setBorder(BorderFactory.createLineBorder(GameWindow.FALLOUT_GREEN));
+        // CHANGED: Use UIHelper
+        this.usernameField = UIHelper.createFalloutTextField("Wanderer", 15);
         userPanel.add(usernameField, BorderLayout.CENTER);
 
         gbc.insets = new Insets(0, 10, 10, 10);
@@ -82,8 +78,8 @@ public class MainMenuWindow extends JFrame {
 
         gbc.insets = new Insets(10, 10, 5, 10);
 
-        // --- 1. NEW GAME BUTTON ---
-        JButton localButton = createFalloutButton("Start Local Game");
+        // CHANGED: Use UIHelper for all buttons
+        JButton localButton = UIHelper.createFalloutButton("Start Local Game");
         localButton.addActionListener(e -> {
             if (controller != null) {
                 Object[] options = {"Start Fresh", "Load Save"};
@@ -298,11 +294,8 @@ public class MainMenuWindow extends JFrame {
                         + "2. Select 'Join by Session ID'.\n"
                         + "3. Enter the code your host gave you and connect!\n";
 
-        JTextArea textArea = new JTextArea(tutorialText);
-        textArea.setFont(GameWindow.FALLOUT_FONT.deriveFont(14f));
-        textArea.setBackground(GameWindow.DARK_BACKGROUND);
-        textArea.setForeground(Color.WHITE);
-        textArea.setEditable(false);
+        // CHANGED: Use UIHelper
+        JTextArea textArea = UIHelper.createFalloutTextArea(tutorialText);
         textArea.setWrapStyleWord(true);
         textArea.setLineWrap(true);
         textArea.setMargin(new Insets(10, 10, 10, 10));
@@ -311,24 +304,8 @@ public class MainMenuWindow extends JFrame {
         scrollPane.setBorder(BorderFactory.createLineBorder(GameWindow.FALLOUT_GREEN));
         scrollPane.setPreferredSize(new Dimension(500, 400));
 
-        scrollPane.getVerticalScrollBar().setUI(new javax.swing.plaf.basic.BasicScrollBarUI() {
-            @Override
-            protected void configureScrollBarColors() {
-                this.thumbColor = GameWindow.FALLOUT_GREEN;
-                this.trackColor = GameWindow.DARK_BACKGROUND;
-            }
-            @Override
-            protected JButton createDecreaseButton(int orientation) { return createZeroButton(); }
-            @Override
-            protected JButton createIncreaseButton(int orientation) { return createZeroButton(); }
-            private JButton createZeroButton() {
-                JButton b = new JButton();
-                b.setPreferredSize(new Dimension(0, 0));
-                b.setMinimumSize(new Dimension(0, 0));
-                b.setMaximumSize(new Dimension(0, 0));
-                return b;
-            }
-        });
+        // CHANGED: Use UIHelper
+        UIHelper.styleScrollPane(scrollPane);
 
         JOptionPane.showMessageDialog(this,
                 scrollPane,
@@ -614,6 +591,15 @@ public class MainMenuWindow extends JFrame {
                         List<BoardField> fields = (List<BoardField>) msg.getPayload();
                         // This updates the logic, the board UI, and the properties window
                         controller.updateBoardState(fields);
+                        break;
+                    case PLAYER_CHAT:
+                        Object[] chatData = (Object[]) msg.getPayload();
+                        String senderName = (String) chatData[0];
+                        PlayerToken senderToken = (PlayerToken) chatData[1];
+                        String text = (String) chatData[2];
+
+                        // Route through controller to handle chat
+                        controller.handleIncomingChat(senderName, senderToken, text);
                         break;
                 }
             } catch (Exception e) {

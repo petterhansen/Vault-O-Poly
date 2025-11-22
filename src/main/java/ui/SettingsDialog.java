@@ -10,26 +10,24 @@ import java.io.IOException;
 public class SettingsDialog extends JDialog {
 
     public SettingsDialog(Frame owner) {
-        super(owner, "Settings", true); // Modal = true
+        super(owner, "Settings", true);
 
         getContentPane().setBackground(GameWindow.DARK_BACKGROUND);
         setLayout(new BorderLayout(10, 10));
-        setSize(450, 420); // Increased width and height for new layout
+        setSize(450, 420);
         setLocationRelativeTo(owner);
 
-        // Title
         JLabel title = new JLabel("VAULT-O-POLY SETTINGS", SwingConstants.CENTER);
         title.setFont(GameWindow.FALLOUT_FONT.deriveFont(16f));
         title.setForeground(GameWindow.FALLOUT_GREEN);
         title.setBorder(BorderFactory.createEmptyBorder(10, 0, 10, 0));
         add(title, BorderLayout.NORTH);
 
-        // Content Panel (Volume + Cache Buttons)
         JPanel contentPanel = new JPanel(new BorderLayout(10, 10));
         contentPanel.setBackground(GameWindow.DARK_BACKGROUND);
         contentPanel.setBorder(BorderFactory.createEmptyBorder(0, 20, 0, 20));
 
-        // --- Volume Panel ---
+        // Volume Panel
         JPanel volumePanel = new JPanel(new GridLayout(3, 1, 10, 5));
         volumePanel.setBackground(GameWindow.DARK_BACKGROUND);
 
@@ -48,8 +46,8 @@ public class SettingsDialog extends JDialog {
         });
         volumePanel.add(sfxSlider);
 
-        JButton testBtn = new JButton("Test Sound");
-        styleButton(testBtn);
+        // CHANGED: Use UIHelper
+        JButton testBtn = UIHelper.createFalloutButton("Test Sound");
         testBtn.addActionListener(e -> {
             try {
                 util.WebAudioPlayer.play(getClass().getResource("/sounds/click.wav").toString());
@@ -58,7 +56,7 @@ public class SettingsDialog extends JDialog {
         volumePanel.add(testBtn);
         contentPanel.add(volumePanel, BorderLayout.NORTH);
 
-        // --- Cache Maintenance Panel ---
+        // Cache Maintenance Panel
         JPanel cacheMainPanel = new JPanel();
         cacheMainPanel.setLayout(new BoxLayout(cacheMainPanel, BoxLayout.Y_AXIS));
         cacheMainPanel.setBackground(GameWindow.DARK_BACKGROUND);
@@ -70,28 +68,23 @@ public class SettingsDialog extends JDialog {
         cacheMainPanel.add(cacheLabel);
         cacheMainPanel.add(Box.createRigidArea(new Dimension(0, 10)));
 
-        // 1. VIDEO/TEMP CACHE ROW
         cacheMainPanel.add(createCacheRow("Video/Temp Cache (Raw)", CacheType.VIDEO_TEMP));
         cacheMainPanel.add(Box.createRigidArea(new Dimension(0, 10)));
-
-        // 2. GIF CACHE ROW
         cacheMainPanel.add(createCacheRow("GIF Cache (Processed)", CacheType.GIF_PERSISTENT));
 
         contentPanel.add(cacheMainPanel, BorderLayout.CENTER);
         add(contentPanel, BorderLayout.CENTER);
 
-
-        // Close Button
         JPanel bottomPanel = new JPanel();
         bottomPanel.setBackground(GameWindow.DARK_BACKGROUND);
-        JButton closeBtn = new JButton("Close");
-        styleButton(closeBtn);
+
+        // CHANGED: Use UIHelper
+        JButton closeBtn = UIHelper.createFalloutButton("Close");
         closeBtn.addActionListener(e -> dispose());
         bottomPanel.add(closeBtn);
 
         add(bottomPanel, BorderLayout.SOUTH);
 
-        // Immediately run cache calculation once dialog is visible
         SwingUtilities.invokeLater(this::revalidate);
     }
 
@@ -148,25 +141,20 @@ public class SettingsDialog extends JDialog {
      * Creates a cache row including the dynamically calculated size.
      */
     private JPanel createCacheRow(String labelText, CacheType type) {
-        // Outer panel for layout
         JPanel row = new JPanel(new BorderLayout(5, 0));
         row.setBackground(GameWindow.DARK_BACKGROUND);
 
-        // Calculate info when row is created
         long[] info = getCacheInfo(type);
         String sizeText = sizeToDisplay(info[1]);
 
-        // --- LEFT SIDE: Label and Size ---
         JPanel infoPanel = new JPanel(new GridLayout(2, 1, 0, 0));
         infoPanel.setBackground(GameWindow.DARK_BACKGROUND);
 
-        // 1. Descriptive Label
         JLabel label = new JLabel(labelText);
         label.setFont(GameWindow.FALLOUT_FONT.deriveFont(12f));
         label.setForeground(Color.WHITE);
         infoPanel.add(label);
 
-        // 2. Size/Count Label (UX Enhancement)
         JLabel sizeLabel = new JLabel("Size: " + sizeText + " (" + info[0] + " items)");
         sizeLabel.setFont(GameWindow.FALLOUT_FONT.deriveFont(10f));
         sizeLabel.setForeground(GameWindow.FALLOUT_GREEN.darker());
@@ -174,25 +162,21 @@ public class SettingsDialog extends JDialog {
 
         row.add(infoPanel, BorderLayout.WEST);
 
-        // --- RIGHT SIDE: Buttons (Fixing Size) ---
         JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 5, 0));
         buttonPanel.setBackground(GameWindow.DARK_BACKGROUND);
 
-        // Button Size Fix: Define Preferred Size
         Dimension smallButtonSize = new Dimension(85, 25);
 
-        JButton folderBtn = new JButton("To Folder");
-        styleButton(folderBtn);
+        // CHANGED: Use UIHelper
+        JButton folderBtn = UIHelper.createFalloutButton("To Folder");
         folderBtn.setFont(GameWindow.FALLOUT_FONT.deriveFont(11f));
         folderBtn.setPreferredSize(smallButtonSize);
         folderBtn.addActionListener(e -> showFolder(type));
         buttonPanel.add(folderBtn);
 
-        JButton clearBtn = new JButton("Clear");
-        styleButton(clearBtn);
+        JButton clearBtn = UIHelper.createFalloutButton("Clear");
         clearBtn.setFont(GameWindow.FALLOUT_FONT.deriveFont(11f));
         clearBtn.setPreferredSize(smallButtonSize);
-        // Use lambda to clear cache, then refresh the whole dialog for immediate size update
         clearBtn.addActionListener(e -> {
             clearCache(type);
             SwingUtilities.invokeLater(this::revalidate);
@@ -201,7 +185,6 @@ public class SettingsDialog extends JDialog {
         buttonPanel.add(clearBtn);
 
         row.add(buttonPanel, BorderLayout.EAST);
-
         row.setPreferredSize(new Dimension(getWidth(), 50));
 
         return row;

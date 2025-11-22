@@ -1,10 +1,6 @@
 package game.network;
 
 import java.io.Serializable;
-import java.util.List;
-import board.fields.BoardField;
-import players.Player;
-import util.PlayerToken;
 
 public class NetworkMessage implements Serializable {
 
@@ -57,10 +53,7 @@ public class NetworkMessage implements Serializable {
         SET_CLIENT_PLAYER,
         SYNC_BOARD_STATE,
 
-        // --- NEW: P2P Streaming ---
-        BROADCAST_IMAGE_DATA,
-
-        // --- NEW: Raw Chat Broadcast (Fixes Token Images) ---
+        // Raw Chat Broadcast
         PLAYER_CHAT
     }
 

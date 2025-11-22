@@ -2,7 +2,6 @@ package board.fields;
 
 import game.GameController;
 import players.Player;
-import resources.ResourceType;
 import ui.UIInterface;
 import util.FieldType;
 import util.PropertyType;
@@ -17,19 +16,19 @@ public class PropertyField extends BoardField implements Serializable {
     private int improvementCost;
     private PropertyType propertyType;
     private String groupId;
-    private String imageUrl; // <-- ADDED: Field to store the URL
+    private String imageUrl;
+    private boolean isMortgaged = false;
 
-    // The constructor is updated to accept the groupId AND imageUrl
-    public PropertyField(String name, String description, int position, int purchaseCost, int[] rentCosts, int improvementCost, PropertyType propertyType, String groupId, String imageUrl) { // <-- MODIFIED
+    public PropertyField(String name, String description, int position, int purchaseCost, int[] rentCosts, int improvementCost, PropertyType propertyType, String groupId, String imageUrl) {
         super(name, description, position, FieldType.PROPERTY);
         this.purchaseCost = purchaseCost;
         this.rentCosts = rentCosts;
         this.improvementCost = improvementCost;
         this.propertyType = propertyType;
         this.groupId = groupId;
-        this.imageUrl = imageUrl; // <-- ASSIGN NEW FIELD
+        this.imageUrl = imageUrl;
         this.owner = null;
-        this.currentImprovementLevel = 0; // Index 0 is base rent
+        this.currentImprovementLevel = 0;
     }
 
     @Override
@@ -37,30 +36,22 @@ public class PropertyField extends BoardField implements Serializable {
         UIInterface ui = controller.getUi();
 
         if (owner == null) {
-            // Offer purchase
             if (player.canAfford(purchaseCost)) {
-                // REFACTORED:
-                // Instead of asking the UI, tell the controller to ask the player.
                 controller.requestPropertyPurchase(player, this);
-                // --- THIS IS THE FIX ---
-                // Tell the game loop to NOT end the turn.
-                // The turn will be ended in "completePropertyPurchase"
-                return false;
+                return false; // Wait for purchase decision
             } else {
                 ui.logMessage("You cannot afford to buy " + name + ".");
-                return true; // Turn is over.
+                return true;
             }
         } else if (owner != player) {
             int baseRent = getRent();
             int charisma = player.getSpecial().getCharisma();
 
             // Formula: 2.5% discount per point of Charisma
-            // CHA 1: 2.5% discount | CHA 10: 25% discount
             double discountPercent = (charisma * 0.025);
             int discountAmount = (int) (baseRent * discountPercent);
             int rentToPay = Math.max(0, baseRent - discountAmount);
 
-            // Log the interaction
             if (discountAmount > 0) {
                 ui.logMessage(player.getName() + " uses Charisma (" + charisma + ") to haggle rent down by " + discountAmount + " caps.");
             }
@@ -74,13 +65,10 @@ public class PropertyField extends BoardField implements Serializable {
             }
             return true;
         } else {
-            // Landed on own property
             ui.logMessage("You admire your handiwork at " + name + ".");
             return true;
         }
     }
-
-    private boolean isMortgaged = false;
 
     public boolean isMortgaged() { return isMortgaged; }
 
@@ -95,7 +83,6 @@ public class PropertyField extends BoardField implements Serializable {
         if (currentImprovementLevel < rentCosts.length) {
             return rentCosts[currentImprovementLevel];
         }
-        // Return max rent if something is wrong
         return rentCosts[rentCosts.length - 1];
     }
 
@@ -116,7 +103,6 @@ public class PropertyField extends BoardField implements Serializable {
         return propertyType;
     }
 
-    // --- ADD THIS GETTER ---
     public String getGroupId() {
         return groupId;
     }
@@ -129,29 +115,13 @@ public class PropertyField extends BoardField implements Serializable {
         return currentImprovementLevel;
     }
 
-    // --- ADDED GETTER ---
     public String getImageUrl() {
         return imageUrl;
     }
 
     public void incrementImprovementLevel() {
-        // Use the constant from PropertyDevelopment
         if (currentImprovementLevel < mechanics.PropertyDevelopment.MAX_IMPROVEMENT_LEVEL) {
             this.currentImprovementLevel++;
         }
-    }
-
-    // These methods are stubs for a more complex resource system.
-    // They are "complete" as stubs.
-    public boolean hasResourceProduction() {
-        return false;
-    }
-
-    public ResourceType getProducedResource() {
-        return null;
-    }
-
-    public int getProductionRate() {
-        return 0;
     }
 }

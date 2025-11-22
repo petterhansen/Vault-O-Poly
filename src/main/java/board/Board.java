@@ -2,18 +2,15 @@ package board;
 
 import config.BoardLoader;
 import players.Player;
-import resources.ResourceType;
 import ui.UIInterface;
 import board.fields.BoardField;
 import board.fields.StartField;
 
 import java.util.List;
-import java.util.Map;
 
 public class Board {
     private List<BoardField> fields;
     private int startFieldPosition;
-    private Map<ResourceType, Integer> resourcePool; // Not used yet, but in your design
     private UIInterface ui;
 
     public Board(String boardLayoutFile, UIInterface ui) {
@@ -39,7 +36,7 @@ public class Board {
         if (position >= 0 && position < fields.size()) {
             return fields.get(position);
         }
-        return null; // Should not happen
+        return null;
     }
 
     public List<BoardField> getFields() {
