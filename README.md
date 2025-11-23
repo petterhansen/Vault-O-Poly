@@ -2,7 +2,7 @@
 
 A Fallout-themed Monopoly game built in Java with multiplayer support, casino minigames, and a retro terminal aesthetic.
 
-![Vault-O-Poly](https://img.shields.io/badge/Java-17+-blue) ![Status](https://img.shields.io/badge/status-educational-yellow)
+![Vault-O-Poly](https://img.shields.io/badge/Java-17+-blue) ![Status](https://img.shields.io/badge/status-release_v0.1.0-green)
 
 ## 🎮 Features
 
@@ -44,143 +44,175 @@ A Fallout-themed Monopoly game built in Java with multiplayer support, casino mi
 
 ## 🚀 Getting Started
 
-### Prerequisites
-- **Java 17 or higher**
-- **FFmpeg** (required for GIF conversion feature)
-  - Download from [ffmpeg.org](https://ffmpeg.org/download.html)
-  - Place `ffmpeg.exe` in `tools/` directory (create if needed)
+### 📥 Download & Play (Recommended)
+You do not need to install Java or FFmpeg manually. The installer handles all dependencies.
 
-### Installation
+1. **Download**: Go to the [**Releases Page**](https://github.com/petterhansen/Vault-O-Poly/releases/latest) and download `VaultOPoly_Installer.exe`.
+2. **Install**: Run the installer and choose an installation directory.
+   > **⚠️ Note on Windows Defender:**
+   > Because this is a free open-source project, we do not have a paid digital certificate. Windows might show a warning.
+   > Click **"More Info"** -> **"Run Anyway"**.
+3. **Play**: Launch the game using the Desktop shortcut.
+
+---
+
+### 🛠️ Build from Source (Developers)
+If you want to modify the code or build it yourself, follow these steps.
+
+**Prerequisites:**
+- **Java 17 or higher**
+- **Maven**
+- **FFmpeg** (Optional: required only if you want GIF conversion to work in dev mode)
 
 1. **Clone the repository**
    ```bash
-   git clone https://github.com/yourusername/vault-o-poly.git
+   git clone [https://github.com/petterhansen/vault-o-poly.git](https://github.com/petterhansen/vault-o-poly.git)
    cd vault-o-poly
-   ```
 
-2. **Build with Maven**
-   ```bash
-   mvn clean package
-   ```
+2.  **Build with Maven**
 
-3. **Run the game**
-   ```bash
-   java -jar target/vault-o-poly-1.0.jar
-   ```
+    ```bash
+    mvn clean package
+    ```
+
+3.  **Run the game**
+
+    ```bash
+    java -jar target/vault-o-poly-1.0.jar
+    ```
+
+-----
 
 ### Quick Start
 
 #### Local Game
-1. Click **"Start Local Game"**
-2. Choose number of players (2-4)
-3. Enter player names
-4. Roll dice to begin!
+
+1.  Click **"Start Local Game"**
+2.  Choose number of players (2-4)
+3.  Enter player names
+4.  Roll dice to begin\!
 
 #### Host Multiplayer
-1. Click **"Host Network Game"**
-2. (Optional) Enter external tunnel details if using Playit.gg/Ngrok
-3. Choose to start fresh or load a saved game
-4. Share the generated Session Code with friends
-5. Wait for players to join
+
+1.  Click **"Host Network Game"**
+2.  (Optional) Enter external tunnel details if using Playit.gg/Ngrok
+3.  Choose to start fresh or load a saved game
+4.  Share the generated Session Code with friends
+5.  Wait for players to join
 
 #### Join Multiplayer
-1. Click **"Join Network Game"**
-2. Select **"Join by Session ID"**
-3. Enter the host's Session Code
-4. Wait for the game to sync
+
+1.  Click **"Join Network Game"**
+2.  Select **"Join by Session ID"**
+3.  Enter the host's Session Code
+4.  Wait for the game to sync
 
 ## 🎯 How to Play
 
 ### The Basics
-- **Objective**: Be the last player standing by bankrupting your opponents
-- **Turn Structure**:
-  1. Collect passive resources from owned properties
-  2. Roll dice to move around the board
-  3. Land on spaces to buy properties or pay rent
-  4. (Optional) Improve properties or trade with other players
+
+  - **Objective**: Be the last player standing by bankrupting your opponents
+  - **Turn Structure**:
+    1.  Collect passive resources from owned properties
+    2.  Roll dice to move around the board
+    3.  Land on spaces to buy properties or pay rent
+    4.  (Optional) Improve properties or trade with other players
 
 ### Property Management
-- **Buying**: Land on unowned property and choose to purchase
-- **Improving**: Own all properties in a color group to build improvements
-  - Costs: Caps + Scrap Materials
-  - Each level increases rent significantly
-- **Mortgaging**: Temporarily mortgage properties for emergency caps
-  - Receive 50% of purchase price
-  - Un-mortgage for 55% of purchase price
+
+  - **Buying**: Land on unowned property and choose to purchase
+  - **Improving**: Own all properties in a color group to build improvements
+      - Costs: Caps + Scrap Materials
+      - Each level increases rent significantly
+  - **Mortgaging**: Temporarily mortgage properties for emergency caps
+      - Receive 50% of purchase price
+      - Un-mortgage for 55% of purchase price
 
 ### Special Spaces
-- **START**: Collect 200 caps when passing
-- **Resource Fields**: Gain random resources (Water, Food, Power, Scrap)
-- **Wasteland/Vault-Tec**: Draw event cards
-- **Jail**: Pay 50 caps, use card, or roll doubles to escape
-- **Casino**: Type `/casino` in chat to play minigames
+
+  - **START**: Collect 200 caps when passing
+  - **Resource Fields**: Gain random resources (Water, Food, Power, Scrap)
+  - **Wasteland/Vault-Tec**: Draw event cards
+  - **Jail**: Pay 50 caps, use card, or roll doubles to escape
+  - **Casino**: Type `/casino` in chat to play minigames
 
 ### Trading
-1. Click **"Trade"** button during your turn
-2. Select trading partner
-3. Build your offer (caps, resources, properties)
-4. Partner builds counter-offer
-5. Both players must accept the deal
+
+1.  Click **"Trade"** button during your turn
+2.  Select trading partner
+3.  Build your offer (caps, resources, properties)
+4.  Partner builds counter-offer
+5.  Both players must accept the deal
 
 ### Commands
-- `/roll` - Roll dice (only on your turn)
-- `/casino` - Open casino minigames
-- `/gif [url]` - Convert and share video/image URLs
-- `/w [player] [message]` - Whisper to specific player
-- `/me [action]` - Roleplay action text
-- `/radio` or `/music` - Open radio tuner
-- `/help` - Show all commands
+
+  - `/roll` - Roll dice (only on your turn)
+  - `/casino` - Open casino minigames
+  - `/gif [url]` - Convert and share video/image URLs
+  - `/w [player] [message]` - Whisper to specific player
+  - `/me [action]` - Roleplay action text
+  - `/radio` or `/music` - Open radio tuner
+  - `/help` - Show all commands
 
 ## 🛠️ Configuration
 
 ### Radio Stations
+
 Create `radio.json` in the game directory to add custom stations:
 
 ```json
 [Galaxy News Radio]
-https://example.com/song1.mp3
-https://example.com/song2.mp3
+[https://example.com/song1.mp3](https://example.com/song1.mp3)
+[https://example.com/song2.mp3](https://example.com/song2.mp3)
 
 [Radio New Vegas]
-https://example.com/another-song.mp3
+[https://example.com/another-song.mp3](https://example.com/another-song.mp3)
 ```
 
 ### Network Settings
+
 For hosting over the internet:
-1. Use [Playit.gg](https://playit.gg) for easiest setup (recommended)
-2. Or forward ports **10365** (game) and **10366** (media) on your router
-3. Enter external IP/domain when prompted during host setup
+
+1.  Use [Playit.gg](https://playit.gg) for easiest setup (recommended)
+2.  Or forward ports **10365** (game) and **10366** (media) on your router
+3.  Enter external IP/domain when prompted during host setup
 
 ### Cache Management
-- **Settings → Cache Maintenance** to clear temporary files
-- Video cache: `%TEMP%/vop_*`
-- GIF cache: `%USERPROFILE%/VaultOPolyCache/gifs/`
+
+  - **Settings → Cache Maintenance** to clear temporary files
+  - Video cache: `%TEMP%/vop_*`
+  - GIF cache: `%USERPROFILE%/VaultOPolyCache/gifs/`
 
 ## 🔧 Advanced Features
 
 ### Save System
-- **Encrypted Saves**: Game states are AES-256 encrypted
-- **Save Viewer**: Standalone tool to inspect `.vop` save files
-  ```bash
-  java -cp target/vault-o-poly-1.0.jar tools.SaveViewer
-  ```
+
+  - **Encrypted Saves**: Game states are AES-256 encrypted
+  - **Save Viewer**: Standalone tool to inspect `.vop` save files
+    ```bash
+    java -cp target/vault-o-poly-1.0.jar tools.SaveViewer
+    ```
 
 ### GIF Conversion
+
 The game can convert videos to GIFs:
+
 ```
 /gif [url] [start_time] [duration]
-/gif https://example.com/video.webm 5 10
+/gif [https://example.com/video.webm](https://example.com/video.webm) 5 10
 ```
-- Supports: MP4, WebM, MOV, AVI, MKV
-- Auto-caches to avoid re-conversion
-- Host approval required for client requests
+
+  - Supports: MP4, WebM, MOV, AVI, MKV
+  - Auto-caches to avoid re-conversion
+  - Host approval required for client requests
 
 ### Debug Commands (Host Only)
-- `/setcaps [player] [amount]` - Set player's caps
-- `/addcaps [player] [amount]` - Add caps to player
-- `/setowner [position] [player]` - Transfer property ownership
-- `/setres [player] [type] [amount]` - Set resource amount
-- `/teleport [player] [position]` - Move player to board position
+
+  - `/setcaps [player] [amount]` - Set player's caps
+  - `/addcaps [player] [amount]` - Add caps to player
+  - `/setowner [position] [player]` - Transfer property ownership
+  - `/setres [player] [type] [amount]` - Set resource amount
+  - `/teleport [player] [position]` - Move player to board position
 
 ## 📁 Project Structure
 
@@ -205,58 +237,58 @@ src/main/resources/
 
 ## 🐛 Troubleshooting
 
-### "FFmpeg not found" error
-- Download FFmpeg and place `ffmpeg.exe` in `tools/` directory
-- Or disable GIF conversion by not using `/gif` command
-
 ### Connection issues
-- **LAN**: Ensure firewall allows Java on port 10365
-- **Internet**: Use Playit.gg tunnel or port forward 10365-10366
-- **Behind VPN**: May need to enter external address manually when hosting
+
+  - **LAN**: Ensure firewall allows Java on port 10365
+  - **Internet**: Use Playit.gg tunnel or port forward 10365-10366
+  - **Behind VPN**: May need to enter external address manually when hosting
 
 ### Game crashes on save/load
-- Ensure you have write permissions in game directory
-- Try clearing save files in case of corruption
+
+  - Ensure you have write permissions in game directory
+  - Try clearing save files in case of corruption
 
 ### Chat images not loading
-- Check if URL is publicly accessible
-- Some formats (AVIF, TIFF) are not supported
-- Use `/gif` command to convert unsupported formats
+
+  - Check if URL is publicly accessible
+  - Some formats (AVIF, TIFF) are not supported
+  - Use `/gif` command to convert unsupported formats
 
 ## 🙏 Acknowledgments
 
-- **Fallout Series** by Bethesda/Obsidian - for inspiration and theme
-- **[Fallout.wiki](https://fallout.wiki)** - for Property images and Property descriptions
-- **FlatLaf** - Modern look and feel for Swing
-- **Gson** - JSON parsing
-- **Archive.org** - Default radio station tracks
-- **Playit.gg** - Easy tunneling solution for multiplayer
+  - **Fallout Series** by Bethesda/Obsidian - for inspiration and theme
+  - **[Fallout.wiki](https://fallout.wiki)** - for Property images and Property descriptions
+  - **FlatLaf** - Modern look and feel for Swing
+  - **Gson** - JSON parsing
+  - **Archive.org** - Default radio station tracks
+  - **Playit.gg** - Easy tunneling solution for multiplayer
 
 ## ⚠️ Disclaimer
 
 This is a **personal educational project** created for learning purposes, specifically to explore multiplayer networking concepts in Java. This project is:
 
-- **Not for commercial use** - This is a hobby/learning project with no commercial intent
-- **Fan-made content** - This project is inspired by the Fallout universe and Monopoly game mechanics, but is not affiliated with, endorsed by, or connected to Bethesda Softworks, Obsidian Entertainment, Hasbro, or any other rights holders
-- **Educational purposes only** - Created purely as a learning exercise in game development and network programming
-- **No warranty** - Provided "as is" without any guarantees or support
-- **Trademark acknowledgment** - "Fallout," "Vault-Tec," and related terms are trademarks of Bethesda Softworks. "Monopoly" is a trademark of Hasbro. This project uses these themes for educational purposes only.
+  - **Not for commercial use** - This is a hobby/learning project with no commercial intent
+  - **Fan-made content** - This project is inspired by the Fallout universe and Monopoly game mechanics, but is not affiliated with, endorsed by, or connected to Bethesda Softworks, Obsidian Entertainment, Hasbro, or any other rights holders
+  - **Educational purposes only** - Created purely as a learning exercise in game development and network programming
+  - **No warranty** - Provided "as is" without any guarantees or support
+  - **Trademark acknowledgment** - "Fallout," "Vault-Tec," and related terms are trademarks of Bethesda Softworks. "Monopoly" is a trademark of Hasbro. This project uses these themes for educational purposes only.
 
 **If you are a rights holder and have concerns about this project, please contact me and I will address them promptly.**
 
 ## 📖 Learning Resources
 
 This project demonstrates:
-- **Socket Programming**: Client-server architecture with TCP sockets
-- **Object Serialization**: Network message passing with Java serialization
-- **Thread Management**: Concurrent client handling and UI updates
-- **Swing GUI**: Building complex desktop applications with Java Swing
-- **State Synchronization**: Keeping multiplayer game states consistent
-- **Media Streaming**: Hosting and serving converted media files
-- **Encryption**: AES-256 encryption for save files
 
-Feel free to explore the code and use it as a reference for your own learning!
+  - **Socket Programming**: Client-server architecture with TCP sockets
+  - **Object Serialization**: Network message passing with Java serialization
+  - **Thread Management**: Concurrent client handling and UI updates
+  - **Swing GUI**: Building complex desktop applications with Java Swing
+  - **State Synchronization**: Keeping multiplayer game states consistent
+  - **Media Streaming**: Hosting and serving converted media files
+  - **Encryption**: AES-256 encryption for save files
 
----
+Feel free to explore the code and use it as a reference for your own learning\!
+
+-----
 
 **War. War never changes. But Monopoly... Monopoly just got a whole lot more radioactive.** ☢️
